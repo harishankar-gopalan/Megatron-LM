@@ -161,7 +161,7 @@ py::array build_sample_idx(const py::array_t<int32_t> &sizes_,
 
   // Remove bound checks.
   auto sizes = sizes_.unchecked<1>();
-  auto doc_idx = doc_idx_template unchecked<1>();
+  auto doc_idx = doc_idx_.template unchecked<1>();
 
   // Mapping and it's length (1D).
   int64_t num_samples = 0;
