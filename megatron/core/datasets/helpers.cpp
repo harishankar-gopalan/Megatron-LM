@@ -139,8 +139,9 @@ void build_blending_indices(py::array_t<int16_t> &dataset_index,
   }
 }
 
+template<typename T>
 py::array build_sample_idx(const py::array_t<int32_t> &sizes_,
-                           const py::array_t<int32_t> &doc_idx_,
+                           const py::array_t<T> &doc_idx_,
                            const int32_t seq_length,
                            const int32_t num_epochs,
                            const int64_t tokens_per_epoch,
@@ -160,7 +161,7 @@ py::array build_sample_idx(const py::array_t<int32_t> &sizes_,
 
   // Remove bound checks.
   auto sizes = sizes_.unchecked<1>();
-  auto doc_idx = doc_idx_.unchecked<1>();
+  auto doc_idx = doc_idx_template unchecked<1>();
 
   // Mapping and it's length (1D).
   int64_t num_samples = 0;
@@ -833,7 +834,8 @@ PYBIND11_MODULE(helpers, m)
 {
   m.def("build_mapping", &build_mapping);
   m.def("build_blocks_mapping", &build_blocks_mapping);
-  m.def("build_sample_idx", &build_sample_idx);
+  m.def("build_sample_idx", &build_sample_idx<int32_t>);
+  m.def("build_sample_idx_int64", &build_sample_idx<int64_t>);
   m.def("build_blending_indices", &build_blending_indices);
   m.def("build_exhaustive_blending_indices", &build_exhaustive_blending_indices);
 }

@@ -1,6 +1,7 @@
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 import logging
+import math
 import os
 import time
 from dataclasses import dataclass
@@ -424,7 +425,7 @@ class GPTDataset(MegatronDataset):
             else:
                 drop_last_partial_sequence = True
 
-            assert document_index.dtype == numpy.int32
+            assert document_index.dtype == numpy.int32 or document_index.dtype == numpy.in64
             assert self.dataset.sequence_lengths.dtype == numpy.int32
             if len(document_index) * 2 > len(self.dataset.sequence_lengths):
                 # Heuristic: if "access density" of sequence_lengths is relatively high,
@@ -435,15 +436,27 @@ class GPTDataset(MegatronDataset):
                 sequence_lengths_for_cpp = self.dataset.sequence_lengths.copy()
             else:
                 sequence_lengths_for_cpp = self.dataset.sequence_lengths
-            sample_index = helpers.build_sample_idx(
-                sequence_lengths_for_cpp,
-                document_index,
-                sequence_length,
-                num_epochs,
-                num_tokens_per_epoch,
-                drop_last_partial_sequence,
-                self.config.add_extra_token_to_sequence,
-            )
+            
+            if document_index.dtype == numpy.int64:
+                sample_index = helpers.build_sample_idx_int64(
+                    sequence_lengths_for_cpp,
+                    document_index,
+                    sequence_length,
+                    num_epochs,
+                    num_tokens_per_epoch,
+                    drop_last_partial_sequence,
+                    self.config.add_extra_token_to_sequence,
+                )
+            else:
+                sample_index = helpers.build_sample_idx_int(
+                    sequence_lengths_for_cpp,
+                    document_index,
+                    sequence_length,
+                    num_epochs,
+                    num_tokens_per_epoch,
+                    drop_last_partial_sequence,
+                    self.config.add_extra_token_to_sequence,
+                )
 
             # Build the shuffle index
             if separate_final_epoch:
@@ -575,7 +588,7 @@ def _build_document_index(
         document_index = numpy.mgrid[0:num_epochs, 0 : len(documents)][1]
         document_index[:] = documents
         document_index = document_index.reshape(-1)
-        document_index = document_index.astype(numpy.int32)
+        document_index = document_index.astype(numpy.int32 if len(documents) < math.pow(2, 31) - 1 else numpy.int64)
         numpy_random_state.shuffle(document_index)
         return document_index
 
