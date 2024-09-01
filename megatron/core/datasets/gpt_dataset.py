@@ -448,7 +448,7 @@ class GPTDataset(MegatronDataset):
                     self.config.add_extra_token_to_sequence,
                 )
             else:
-                sample_index = helpers.build_sample_idx_int(
+                sample_index = helpers.build_sample_idx(
                     sequence_lengths_for_cpp,
                     document_index,
                     sequence_length,
